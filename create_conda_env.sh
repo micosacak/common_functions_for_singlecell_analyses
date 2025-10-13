@@ -17,3 +17,5 @@ conda install -c bioconda bioconductor-rtracklayer bioconductor-cner gtfparse be
 
 pip install pyarrow==14.0.2 --only-binary :all:
 pip install umap-learn diopy numpy jupyter ipykernel ipython decoupler pyarrow pybedtools
+
+R CMD installPackages.R
