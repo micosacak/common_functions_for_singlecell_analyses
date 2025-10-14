@@ -4196,6 +4196,18 @@ runMonocle = function(my.seurat.obj, the_root_cell = "10", the_col_data = "cca_c
                 root_pr_nodes = get_earliest_principal_node(cds_from_seurat,time_bin = the_root_cell, the_col_data = the_col_data))
     return(cds_from_seurat)
 }
+
+#library(monocle3)
+#library(ggplot2)
+#library(dplyr)
+#library(Seurat)
+#########################
+#   Example Usage       #
+#########################
+#my.seurat.obj
+#Idents(my.seurat.obj) = my.seurat.obj$main.cells
+#cds_from_seurat = runMonocle(my.seurat.obj, the_root_cell = "ERG", the_col_data = "main.cells", add_more_var = nrow(my.seurat.obj))
+
 ### end
 getTheCells = function(seurat_obj, gene, min.exp = 0){
     if(length(gene) == 1){
