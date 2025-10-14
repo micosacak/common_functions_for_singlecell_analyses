@@ -4145,7 +4145,58 @@ getLoomPaths <- function(prfx = "/group/crtd_becker/Data/00_biocluster4/MIC_scRN
 
 
 ###### MONOCLE3
+### start of functions to add pseudotime to a seurat object.
+                            
+ggplotColours <- function(n = 6, h = c(0, 360) + 15){
+  if ((diff(h) %% 360) < 1) h[2] <- h[2] - 360/n
+  hcl(h = (seq(h[1], h[2], length = n)), c = 100, l = 65)
+}
+#
+get_earliest_principal_node <- function(cds, time_bin = "ERG", the_col_data = "main.cells"){
+  cell_ids <- which(colData(cds)[, the_col_data] == time_bin)
+  #cell_ids = which(colData(cds)[, "the_cells"] %in% time_bin)
+  #cell_ids <- which(colData(cds)$main.cells == "ERG")
+  closest_vertex <- cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
+  closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
+  root_pr_nodes <- igraph::V(principal_graph(cds)[["UMAP"]])$name[as.numeric(names
+  (which.max(table(closest_vertex[cell_ids,]))))]
+  return(root_pr_nodes)
+}
+#
+getColors = function(the.colors, the.vector){
+  idx = match(the.vector, names(the.colors))
+  return(the.colors[idx])
+}
 
+runMonocle = function(my.seurat.obj, the_root_cell = "10", the_col_data = "cca_clusters", add_more_var = NULL){
+    the_var_genes = rownames(my.seurat.obj@reductions[["pca"]]@feature.loadings)
+    if(!is.null(add_more_var)){ 
+        my.seurat.obj = FindVariableFeatures(my.seurat.obj, nfeatures = add_more_var) #,layer = "data")
+        the_var_genes = union(the_var_genes, VariableFeatures(my.seurat.obj))
+    }
+    #gene_annotation <- as.data.frame(rownames(my.seurat.obj@reductions[["pca"]]@feature.loadings), row.names = rownames(my.seurat.obj@reductions[["pca"]]@feature.loadings))
+    gene_annotation = as.data.frame(the_var_genes, row.names = the_var_genes)
+    colnames(gene_annotation) <- "gene_short_name"
+    cell_metadata <- my.seurat.obj@meta.data
+    New_matrix <- my.seurat.obj[["RNA"]]$counts
+    New_matrix <- New_matrix[the_var_genes, ]
+    expression_matrix <- New_matrix
+    cds_from_seurat <- new_cell_data_set(expression_matrix, cell_metadata = cell_metadata, gene_metadata = gene_annotation)
+    recreate.partition <- c(rep(1, length(cds_from_seurat@colData@rownames)))
+    names(recreate.partition) <- cds_from_seurat@colData@rownames
+    recreate.partition <- as.factor(recreate.partition)
+    cds_from_seurat@clusters@listData[["UMAP"]][["partitions"]] <- recreate.partition
+    list_cluster <- my.seurat.obj@active.ident
+    names(list_cluster) <- my.seurat.obj[["RNA"]]$data@Dimnames[[2]]
+    cds_from_seurat@clusters@listData[["UMAP"]][["clusters"]] <- list_cluster
+    cds_from_seurat@clusters@listData[["UMAP"]][["louvain_res"]] <- "NA"
+    cds_from_seurat@int_colData@listData$reducedDims@listData[["UMAP"]] <- my.seurat.obj@reductions[["umap.cca"]]@cell.embeddings
+    cds_from_seurat <- learn_graph(cds_from_seurat, use_partition = F)
+    cds_from_seurat <- order_cells(cds_from_seurat, 
+                root_pr_nodes = get_earliest_principal_node(cds_from_seurat,time_bin = the_root_cell, the_col_data = the_col_data))
+    return(cds_from_seurat)
+}
+### end
 getTheCells = function(seurat_obj, gene, min.exp = 0){
     if(length(gene) == 1){
         tt = seurat_obj@assays$RNA$counts[rownames(seurat_obj) == gene,] > min.exp
