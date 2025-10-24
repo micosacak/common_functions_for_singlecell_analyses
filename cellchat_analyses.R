@@ -187,4 +187,51 @@ object.list <- lapply(object.list, function(x) {mergeInteractions(x, group.cellT
 cellchat <- mergeCellChat(object.list, add.names = names(object.list))
 #> Merge the following slots: 'data.signaling','images','net', 'netP','meta', 'idents', 'var.features' , 'DB', and 'LR'.
 
+cellchat <- computeNetSimilarityPairwise(cellchat, type = "structural")
+cellchat <- computeNetSimilarityPairwise(cellchat, type = "functional")
+
+cellchat <- netEmbedding(cellchat, type = "structural")
+cellchat <- netClustering(cellchat, type = "structural")
+# Visualization in 2D-space
+netVisual_embeddingPairwise(cellchat, type = "structural", label.size = 3.5)
+netVisual_embeddingPairwiseZoomIn(cellchat, type = "structural", nCol = 2)
+
+
+rankSimilarity(cellchat, type = "structural")
+rankSimilarity(cellchat, type = "functional")
+
+oo(14,8)
+gg1 <- rankNet(cellchat, mode = "comparison", measure = "weight", sources.use = NULL, targets.use = NULL, stacked = T, do.stat = TRUE)
+gg2 <- rankNet(cellchat, mode = "comparison", measure = "weight", sources.use = NULL, targets.use = NULL, stacked = F, do.stat = TRUE)
+gg1 + gg2
+
+
+pathways.show <- c("SEMA4") 
+weight.max <- getMaxWeight(object.list, slot.name = c("netP"), attribute = pathways.show) # control the edge weights across different datasets
+par(mfrow = c(1,2), xpd=TRUE)
+ggs = c()
+oo(14,7)
+for (i in 1:length(object.list)) {
+ gg1s = netVisual_aggregate(object.list[[i]], signaling = pathways.show, layout = "circle", edge.weight.max = weight.max[1], edge.width.max = 10, signaling.name = paste(pathways.show, names(object.list)[i]))
+    ggs = c(ggs, gg1s)
+}
+
+
+netVisual_bubble_modified(title.name = "",max.dataset = 1,
+        cellchat, #signaling = "SEMA4", 
+        sources.use = grep("^MM#1|^MM#2",group.new, value = T),remove.isolate = T, 
+        targets.use = grep("^ERG#1",group.new, value = T),
+        comparison = c(1, 2), angle.x = 90)
+
+
+p <- netVisual_bubble(title.name = "",max.dataset = 1,
+        cellchat, #signaling = "SEMA4", 
+        sources.use = grep("^MM#2|^MM#1",group.new, value = T),remove.isolate = T, 
+        targets.use = grep("^ERG#1",group.new, value = T),
+        comparison = c(1, 2), angle.x = 90)
+p <- p + coord_flip()
+p <- p + scale_y_discrete(breaks = c(levels(p$data$source.target), "GAP"), 
+                          labels = function(x) ifelse(grepl("GAP", x), "", x))
+print(p)
+
 # perform down stream analyses and plotting using CelllChat tutorial!
