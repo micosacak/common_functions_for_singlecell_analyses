@@ -1,7 +1,7 @@
 Repository Summary: common_functions_for_singlecell_analyses
 This is a personal utility library for single-cell multiome (scRNA-seq + scATAC-seq) analyses, primarily working with zebrafish (Danio rerio) data using Seurat/Signac in R, with a Python bridge for Python-based tools. Here's what each file does:
 
-77_CommonFunctionS5.R — The core utility file
+`77_CommonFunctionS5.R` — The core utility file
 This is the heart of the repo. It contains many helper functions grouped by purpose:
 Environment & setup
 
